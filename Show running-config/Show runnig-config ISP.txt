@@ -1,0 +1,93 @@
+Show runnig-config ISP
+
+
+ISP#show running-config
+Building configuration...
+
+Current configuration : 1277 bytes
+!
+version 12.4
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname ISP
+!
+boot-start-marker
+boot-end-marker
+!
+!
+no aaa new-model
+memory-size iomem 5
+no ip icmp rate-limit unreachable
+ip cef
+!
+!
+ip auth-proxy max-nodata-conns 3
+ip admission max-nodata-conns 3
+!
+!
+no ip domain lookup
+!
+!
+!
+!
+!
+!
+ip tcp synwait-time 5
+!
+!
+!
+!
+interface FastEthernet0/0
+ description Conexion ISP-R2
+ ip address 198.51.100.1 255.255.255.252
+ ip nat inside
+ ip virtual-reassembly
+ speed 100
+ full-duplex
+!
+interface FastEthernet0/1
+ description Conexion ISP-fortigate
+ ip address 192.0.2.1 255.255.255.252
+ duplex auto
+ speed auto
+!
+interface FastEthernet1/0
+ description HACIA-PC-FISICA
+ ip address 192.168.18.164 255.255.255.0
+ ip nat outside
+ ip virtual-reassembly
+ duplex auto
+ speed auto
+!
+ip forward-protocol nd
+ip route 0.0.0.0 0.0.0.0 192.168.18.1
+!
+no ip http server
+no ip http secure-server
+ip nat inside source list 10 interface FastEthernet1/0 overload
+!
+access-list 10 permit 198.51.100.0 0.0.0.3
+no cdp log mismatch duplex
+!
+!
+control-plane
+!
+!
+!
+!
+line con 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+line aux 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+line vty 0 4
+ login
+!
+!
+end
+

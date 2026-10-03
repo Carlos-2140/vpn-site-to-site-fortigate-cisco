@@ -1,0 +1,127 @@
+Show running-config R2
+
+
+R2#show running-config
+Building configuration...
+
+Current configuration : 1766 bytes
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+!
+hostname R2
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+no ip icmp rate-limit unreachable
+!
+!
+!
+ip dhcp excluded-address 10.21.40.1 10.21.40.9
+!
+ip dhcp pool VLAN10-USUARIOS
+ network 10.21.40.0 255.255.255.128
+ default-router 10.21.40.1
+ dns-server 8.8.8.8
+!
+!
+!
+no ip domain lookup
+ip cef
+no ipv6 cef
+!
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+ip tcp synwait-time 5
+!
+!
+crypto isakmp policy 10
+ hash sha256
+ authentication pre-share
+ group 14
+crypto isakmp key carlos2140 address 192.0.2.2
+!
+!
+crypto ipsec transform-set VPN-SET esp-des esp-sha256-hmac
+ mode tunnel
+!
+!
+!
+crypto map VPN-MAP 10 ipsec-isakmp
+ set peer 192.0.2.2
+ set transform-set VPN-SET
+ set pfs group14
+ match address VPN-TRAFFIC
+!
+!
+!
+!
+!
+interface FastEthernet0/0
+ description Conexion R2-ISP
+ ip address 198.51.100.2 255.255.255.252
+ ip nat outside
+ duplex full
+ crypto map VPN-MAP
+!
+interface FastEthernet1/0
+ no ip address
+ duplex full
+!
+interface FastEthernet1/0.10
+ encapsulation dot1Q 10
+ ip address 10.21.40.1 255.255.255.128
+ ip nat inside
+!
+ip nat inside source list 100 interface FastEthernet0/0 overload
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+ip route 0.0.0.0 0.0.0.0 198.51.100.1
+!
+ip access-list extended VPN-TRAFFIC
+ permit ip 10.21.40.0 0.0.0.127 10.21.40.128 0.0.0.15
+!
+access-list 100 deny   ip 10.21.40.0 0.0.0.127 10.21.40.128 0.0.0.15
+access-list 100 permit ip 10.21.40.0 0.0.0.127 any
+!
+!
+!
+control-plane
+!
+!
+line con 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+ stopbits 1
+line aux 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+ stopbits 1
+line vty 0 4
+ login
+!
+!
+end
+
