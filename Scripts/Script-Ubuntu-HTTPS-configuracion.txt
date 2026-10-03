@@ -1,0 +1,169 @@
+Configuración del servidor Ubuntu HTTPS
+Laboratorio VPN Site-to-Site Cisco R2 <-> FortiGate
+
+============================================================
+1. DATOS DEL SERVIDOR
+============================================================
+
+Sistema operativo:
+Ubuntu Server 24.04
+
+Dirección IP:
+10.21.40.130/28
+
+Gateway:
+10.21.40.129
+
+DNS:
+8.8.8.8
+
+Servicio:
+Apache HTTPS
+
+Puerto:
+TCP/443
+
+
+============================================================
+2. SCRIPT DE INSTALACIÓN Y CONFIGURACIÓN
+============================================================
+
+#!/bin/bash
+
+# ============================================================
+# Script de configuración del servidor Ubuntu
+# Laboratorio VPN Site-to-Site Cisco R2 <-> FortiGate
+# Ubuntu Server 24.04
+# IP: 10.21.40.130/28
+# Gateway: 10.21.40.129
+# Servicio: HTTPS
+# ============================================================
+
+echo "Actualizando repositorios..."
+sudo apt update
+
+echo "Instalando Apache, OpenSSL y curl..."
+sudo apt install apache2 openssl curl -y
+
+echo "Habilitando SSL en Apache..."
+sudo a2enmod ssl
+sudo a2ensite default-ssl
+
+echo "Reiniciando Apache..."
+sudo systemctl restart apache2
+
+echo "Creando pagina web de prueba..."
+echo "<h1>Servidor HTTPS - Laboratorio VPN Site-to-Site</h1>" | sudo tee /var/www/html/index.html
+
+echo "Verificando estado de Apache..."
+sudo systemctl status apache2 --no-pager
+
+echo "Verificando puerto HTTPS 443..."
+sudo ss -tulpn | grep :443
+
+echo "Probando HTTPS local..."
+curl -k https://localhost
+
+echo "Configuracion del servicio HTTPS completada."
+
+
+============================================================
+3. CONFIGURACIÓN DE RED CON NETPLAN
+============================================================
+
+Antes de editar Netplan, verificar el nombre real de la interfaz:
+
+ip a
+
+Ejemplo de archivo Netplan:
+
+network:
+  version: 2
+  ethernets:
+    ens3:
+      addresses:
+        - 10.21.40.130/28
+      routes:
+        - to: default
+          via: 10.21.40.129
+      nameservers:
+        addresses:
+          - 8.8.8.8
+
+NOTA:
+El nombre de interfaz "ens3" es solo un ejemplo.
+Debe sustituirse por el nombre real que muestre el comando:
+
+ip a
+
+
+============================================================
+4. APLICAR CONFIGURACIÓN DE RED
+============================================================
+
+sudo netplan apply
+
+
+============================================================
+5. COMANDOS DE VERIFICACIÓN
+============================================================
+
+Verificar dirección IP:
+
+ip a
+
+Verificar tabla de rutas:
+
+ip route
+
+Probar conectividad con el gateway FortiGate:
+
+ping 10.21.40.129
+
+Verificar que Apache esté activo:
+
+sudo systemctl status apache2
+
+Verificar que HTTPS escuche por TCP/443:
+
+sudo ss -tulpn | grep :443
+
+Probar HTTPS localmente:
+
+curl -k https://localhost
+
+Probar HTTPS usando la IP del servidor:
+
+curl -k https://10.21.40.130
+
+
+============================================================
+6. PRUEBA DESDE WINDOWS
+============================================================
+
+Desde el equipo Windows de la VLAN 10:
+
+ping 10.21.40.130
+
+Abrir en el navegador:
+
+https://10.21.40.130
+
+Si el túnel VPN está activo, el servidor debe responder.
+
+Si el túnel VPN está desactivado, el acceso debe fallar.
+
+
+============================================================
+7. RESULTADO ESPERADO
+============================================================
+
+El servidor Ubuntu debe:
+
+- Tener la dirección 10.21.40.130/28.
+- Utilizar 10.21.40.129 como gateway.
+- Ejecutar Apache correctamente.
+- Tener HTTPS habilitado.
+- Escuchar por TCP/443.
+- Responder a curl -k https://localhost.
+- Ser accesible desde Windows únicamente cuando la VPN Site-to-Site esté activa.
