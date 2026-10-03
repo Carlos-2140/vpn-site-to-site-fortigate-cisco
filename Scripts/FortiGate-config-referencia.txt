@@ -1,0 +1,115 @@
+# FortiGate - Script de referencia
+# Laboratorio VPN Site-to-Site Cisco R2 <-> FortiGate
+#
+# IMPORTANTE:
+# - La configuracion y demostracion del FortiGate se realizo mediante GUI.
+# - Este archivo se incluye en el repositorio como respaldo/documentacion.
+# - La PSK real fue reemplazada por <PSK-OCULTA> antes de publicarlo.
+
+config system interface
+    edit "port1"
+        set vdom "root"
+        set ip 192.0.2.2 255.255.255.252
+        set allowaccess ping http https
+        set type physical
+    next
+    edit "port2"
+        set vdom "root"
+        set ip 10.21.40.129 255.255.255.240
+        set allowaccess ping
+        set type physical
+    next
+end
+
+config router static
+    edit 1
+        set dst 0.0.0.0 0.0.0.0
+        set gateway 192.0.2.1
+        set device "port1"
+    next
+    edit 10
+        set dst 192.168.18.0 255.255.255.0
+        set gateway 192.0.2.1
+        set device "port1"
+    next
+    edit 20
+        set dst 10.21.40.0 255.255.255.128
+        set device "VPN-R2"
+    next
+end
+
+config firewall address
+    edit "RED-USUARIOS"
+        set subnet 10.21.40.0 255.255.255.128
+    next
+    edit "RED-SERVIDOR"
+        set subnet 10.21.40.128 255.255.255.240
+    next
+end
+
+config vpn ipsec phase1-interface
+    edit "VPN-R2"
+        set interface "port1"
+        set ike-version 1
+        set peertype any
+        set net-device enable
+        set proposal des-sha256
+        set dhgrp 14
+        set remote-gw 198.51.100.2
+        set psksecret <PSK-OCULTA>
+    next
+end
+
+config vpn ipsec phase2-interface
+    edit "VPN-R2"
+        set phase1name "VPN-R2"
+        set proposal des-sha256
+        set pfs enable
+        set dhgrp 14
+        set keylifeseconds 43200
+        set src-subnet 10.21.40.128 255.255.255.240
+        set dst-subnet 10.21.40.0 255.255.255.128
+    next
+end
+
+config firewall policy
+    edit 1
+        set name "VPN-R2-to-SERVER"
+        set srcintf "VPN-R2"
+        set dstintf "port2"
+        set srcaddr "RED-USUARIOS"
+        set dstaddr "RED-SERVIDOR"
+        set action accept
+        set schedule "always"
+        set service "ALL"
+        set nat disable
+    next
+    edit 2
+        set name "SERVER-to-VPN-R2"
+        set srcintf "port2"
+        set dstintf "VPN-R2"
+        set srcaddr "RED-SERVIDOR"
+        set dstaddr "RED-USUARIOS"
+        set action accept
+        set schedule "always"
+        set service "ALL"
+        set nat disable
+    next
+    edit 3
+        set name "SERVER-to-INTERNET"
+        set srcintf "port2"
+        set dstintf "port1"
+        set srcaddr "RED-SERVIDOR"
+        set dstaddr "all"
+        set action accept
+        set schedule "always"
+        set service "ALL"
+        set nat enable
+    next
+end
+
+# Verificaciones utiles
+# get system interface physical
+# get router info routing-table all
+# diagnose vpn tunnel list
+# diagnose sniffer packet any 'host 198.51.100.2 and udp port 500' 4 0 l
