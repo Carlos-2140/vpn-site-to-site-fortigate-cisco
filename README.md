@@ -1,6 +1,6 @@
 # VPN Site-to-Site FortiGate ↔ Cisco en GNS3
 
-> 🎥 **Video demostrativo:** pendiente de agregar.
+> 🎥 **Video demostrativo:** (https://www.youtube.com/watch?v=oabZMFzx1Ic)
 
 ## Descripción
 
